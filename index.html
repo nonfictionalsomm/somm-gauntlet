@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Sommelier's Gauntlet</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Lato:wght@300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Lato', sans-serif;
+            background-color: #1a1a1a;
+            color: #e0e0e0;
+        }
+        .title-font {
+            font-family: 'Cormorant Garamond', serif;
+        }
+        .card {
+            background-color: #2c2c2c;
+            border: 1px solid #444;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.3), 0 4px 6px -2px rgba(0, 0, 0, 0.15);
+        }
+        .btn-primary {
+            background-color: #8B7355; /* A sophisticated, wine-like color */
+            color: #ffffff;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #a08461;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        }
+        .btn-secondary {
+            background-color: #4a4a4a;
+            color: #e0e0e0;
+            transition: all 0.3s ease;
+        }
+         .btn-secondary:hover {
+            background-color: #5a5a5a;
+        }
+        .progress-bar-inner {
+            background-color: #8B7355;
+            transition: width 0.5s ease-in-out;
+        }
+        .answer-option {
+            border: 2px solid #555;
+            transition: all 0.2s ease;
+        }
+        .answer-option:hover {
+            background-color: #3a3a3a;
+            border-color: #8B7355;
+        }
+        .answer-option.selected {
+            background-color: #4a4a4a;
+            border-color: #a08461;
+            transform: scale(1.02);
+        }
+        .correct {
+            background-color: #285a34 !important;
+            border-color: #3c8d4f !important;
+            color: white;
+        }
+        .incorrect {
+            background-color: #8c2a2a !important;
+            border-color: #c53030 !important;
+            color: white;
+        }
+
+        /* Drag and Drop Styles */
+        .draggable-list, .drop-zone {
+            min-height: 50px;
+            border: 2px dashed #555;
+        }
+        .draggable {
+            cursor: grab;
+            user-select: none;
+            border: 1px solid #666;
+        }
+        .draggable:active {
+            cursor: grabbing;
+        }
+        .dragging {
+            opacity: 0.5;
+        }
+        .drop-zone.drag-over {
+            border-color: #8B7355;
+            background-color: #3a3a3a;
+        }
+    </style>
+</head>
+<body class="p-4 sm:p-6 md:p-8">
+    <div id="game-container" class="max-w-4xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-bold text-center mb-2 title-font text-white">The Sommelier's Gauntlet</h1>
+        <p class="text-center text-gray-400 mb-8">An Educational Journey Through the World of Wine & Spirits</p>
+
+        <!-- Topic Selection Screen -->
+        <div id="topic-selection-screen" class="card p-6 md:p-8 rounded-lg">
+            <h2 class="text-2xl md:text-3xl font-semibold mb-6 text-center title-font">Choose Your Challenge</h2>
+            <div id="topic-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <!-- Topics will be dynamically inserted here -->
+            </div>
+        </div>
+
+        <!-- Game Screen -->
+        <div id="game-screen" class="hidden">
+            <div class="flex justify-between items-center mb-4">
+                <button id="back-to-topics" class="btn-secondary px-4 py-2 rounded-md text-sm">&larr; Back to Topics</button>
+                <div class="text-lg">
+                    <span class="font-bold">Score:</span>
+                    <span id="score">0</span>
+                </div>
+            </div>
+            <h2 id="topic-title" class="text-2xl md:text-3xl font-semibold mb-4 text-center title-font"></h2>
+            
+            <div class="w-full bg-gray-600 rounded-full h-2.5 mb-6">
+                <div id="progress-bar" class="progress-bar-inner h-2.5 rounded-full" style="width: 0%"></div>
+            </div>
+
+            <div id="question-card" class="card p-6 md:p-8 rounded-lg">
+                <p id="question-text" class="text-xl md:text-2xl mb-6 text-center leading-relaxed"></p>
+                <div id="answer-area">
+                    <!-- Answer options will be dynamically inserted here -->
+                </div>
+                <div id="feedback" class="mt-6 text-center font-bold text-lg h-8"></div>
+                <div class="flex justify-center mt-6">
+                    <button id="submit-btn" class="btn-primary px-8 py-3 rounded-lg text-lg font-semibold">Submit Answer</button>
+                    <button id="next-btn" class="btn-primary px-8 py-3 rounded-lg text-lg font-semibold hidden">Next Question</button>
+                </div>
+            </div>
+
+             <!-- Level Complete Modal -->
+            <div id="level-complete-modal" class="hidden fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
+                <div class="card p-8 rounded-lg text-center max-w-md w-full">
+                    <h2 class="text-3xl font-bold mb-4 title-font">Level Complete!</h2>
+                    <p id="level-summary" class="text-lg mb-6"></p>
+                    <div class="flex justify-center space-x-4">
+                        <button id="next-level-btn" class="btn-primary px-6 py-2 rounded-md">Next Level</button>
+                        <button id="main-menu-btn" class="btn-secondary px-6 py-2 rounded-md">Main Menu</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // This script contains the full game logic and all question data extracted from your document.
+    const gameData = [
+    {
+        topic: "The Bar: Cocktails & Liqueurs",
+        questions: [
+            { type: "matching", question: "Match the classic cocktail to its primary base spirit.", items: { "Manhattan": "Rye/Bourbon", "Caipirinha": "Cachaça", "Margarita": "Tequila", "Aviation": "Gin", "Sidecar": "Cognac" }, pool: ["Rye/Bourbon", "Cachaça", "Tequila", "Gin", "Cognac", "Vodka", "Scotch"] },
+            { type: "fill-in-the-blank", question: "A classic Negroni is made with 1 oz of Gin, 1 oz of Italian sweet vermouth, and 1 oz of __.", answer: "Campari" },
+            { type: "multiple-choice", question: "To make a proper Mint Julep, you muddle simple syrup and mint, add half the spirits and fill the glass with __ ice.", options: ["crushed", "cubed", "block", "chipped"], answer: "crushed" },
+            { type: "fill-in-the-blank", question: "The Sazerac cocktail is served in a glass that has been rinsed with __.", answer: "absinthe" },
+            { type: "multiple-choice", question: "Which ingredient is essential for a Pisco Sour but not for a Whiskey Sour?", options: ["Lemon Juice", "Simple Syrup", "Egg White", "Bitters"], answer: "Egg White" },
+            { type: "fill-in-the-blank", question: "A 'Rob Roy' is a variation of the Manhattan that substitutes which spirit?", answer: "Scotch" },
+            { type: "multiple-choice", question: "The EU legal definition for 'Crème de Cassis' requires a minimum sugar content of how many grams per liter?", options: ["250 g/L", "350 g/L", "400 g/L", "500 g/L"], answer: "400 g/L" },
+            { type: "fill-in-the-blank", question: "The primary flavoring in Galliano is __ and anise.", answer: "vanilla" },
+            { type: "fill-in-the-blank", question: "Frangelico is a liqueur flavored with hazelnut and __.", answer: "vanilla" },
+            { type: "multiple-choice", question: "What is the base spirit of Kahlua?", options: ["Vodka", "Rum", "Brandy", "Tequila"], answer: "Rum" },
+            { type: "multiple-choice", question: "Vermouth is an aromatized, fortified wine flavored primarily with what botanical?", options: ["Gentian", "Cinchona Bark", "Wormwood", "Anise"], answer: "Wormwood" },
+            { type: "matching", question: "Match the aromatized wine type to its key botanical.", items: { "Quinquina": "Cinchona Bark", "Americano": "Gentian", "Vini Amari": "Bitter/Herbal Flavorings", "Vermouth": "Wormwood" }, pool: ["Cinchona Bark", "Gentian", "Wormwood", "Bitter/Herbal Flavorings", "Juniper"] },
+            { type: "fill-in-the-blank", question: "The primary flavoring in Sambuca Romana is __ and licorice.", answer: "Anise" },
+            { type: "multiple-choice", question: "Which liqueur is traditionally made from the zest of Sorrento lemons?", options: ["Cointreau", "Limoncello", "Grand Marnier", "Chambord"], answer: "Limoncello" }
+        ]
+    },
+    {
+        topic: "Spirits of the World",
+        questions: [
+            { type: "multiple-choice", question: "According to US law, Bourbon must be made from a mash that is at least 51% what?", options: ["Rye", "Wheat", "Corn", "Barley"], answer: "Corn" },
+            { type: "ordering", question: "Place the following tequila aging categories in order from youngest to oldest.", items: ["Añejo", "Blanco", "Reposado", "Extra-Añejo"], answer: ["Blanco", "Reposado", "Añejo", "Extra-Añejo"] },
+            { type: "fill-in-the-blank", question: "The unique, funky character of some Jamaican rums comes from the use of __, the acidic, yeast-rich leftovers from the still.", answer: "dunder" },
+            { type: "multiple-choice", question: "To be called '100% Agave Tequila,' the spirit must be produced entirely from the sugars of the Agave Tequilana Weber, or 'Blue Agave.' What is the minimum percentage of Blue Agave required for standard 'Tequila'?", options: ["100%", "80%", "75%", "51%"], answer: "51%" },
+            { type: "fill-in-the-blank", question: "The traditional method for cooking piñas for Mezcal involves earth-covered pits, which imparts a __ character to the final spirit.", answer: "smoky" },
+            { type: "multiple-choice", question: "The national beverage of Panama is Seco Herrerano, a triple-distilled spirit from what base material?", options: ["Agave", "Potatoes", "Sugarcane", "Barley"], answer: "Sugarcane" },
+            { type: "ordering", question: "Order the communes of Cognac by quality, from highest to lowest.", items: ["Borderies", "Grande Champagne", "Fins Bois", "Petite Champagne", "Bons Bois"], answer: ["Grande Champagne", "Petite Champagne", "Borderies", "Fins Bois", "Bons Bois"] },
+            { type:a: "fill-in-the-blank", question: "The term Fine Champagne on a Cognac label indicates a blend from Grande and Petite Champagne, with at least 50% from __.", answer: "Grande Champagne" },
+            { type: "multiple-choice", question: "Most Cognac is produced from which grape variety?", options: ["Folle Blanche", "Colombard", "Ugni Blanc", "Sémillon"], answer: "Ugni Blanc" },
+            { type: "fill-in-the-blank", question: "A Charentais still, used for Cognac production, is another name for a traditional alembic __ still.", answer: "pot" },
+            { type: "matching", question: "Match the Cognac age designation to its minimum aging requirement.", items: { "VS (Very Special)": "2 years", "VSOP (Very Superior Old Pale)": "4 years", "Napoléon": "6 years", "XO (Extra Old)": "6 years" }, pool: ["2 years", "4 years", "6 years", "10 years"] },
+            { type: "fill-in-the-blank", question: "The only rum with AOC status is produced on the island of __.", answer: "Martinique" },
+            { type: "multiple-choice", question: "Demerara rum is produced in which South American country?", options: ["Brazil", "Guyana", "Venezuela", "Colombia"], answer: "Guyana" },
+            { type: "fill-in-the-blank", question: "The world's oldest documented rum brand, established in 1703, is __ from Barbados.", answer: "Mount Gay" },
+            { type: "fill-in-the-blank", question: "The tool used by a jimador to harvest agave is called a __.", answer: "coa" },
+            { type: "multiple-choice", question: "Sotol is a spirit produced from what plant, native to Chihuahua, Durango, and Coahuila?", options: ["Blue Agave", "Dasylirion wheeleri (Desert Spoon)", "Espadin Agave", "Sugarcane"], answer: "Dasylirion wheeleri (Desert Spoon)" }
+        ]
+    },
+    {
+        topic: "The Wines of France I: Bordeaux & Burgundy",
+        questions: [
+            { type: "ordering", question: "Place the tiers of the 1855 Classification of the Médoc in order from highest to lowest.", items: ["Troisièmes Crus", "Premiers Crus", "Quatrièmes Crus", "Seconds Crus", "Cinquièmes Crus"], answer: ["Premiers Crus", "Seconds Crus", "Troisièmes Crus", "Quatrièmes Crus", "Cinquièmes Crus"] },
+            { type: "matching", question: "Match the Grand Cru vineyard to its correct village in the Côte de Nuits.", items: { "Chambertin": "Gevrey-Chambertin", "Clos de Tart": "Morey-St-Denis", "Romanée-Conti": "Vosne-Romanée", "Musigny": "Chambolle-Musigny" }, pool: ["Gevrey-Chambertin", "Morey-St-Denis", "Vosne-Romanée", "Chambolle-Musigny", "Vougeot"] },
+            { type: "multiple-choice", question: "What is the only Grand Cru in the Côte de Nuits permitted to produce white wine?", options: ["Clos de Vougeot", "Musigny", "Bonnes Mares", "Chambertin"], answer: "Musigny" },
+            { type: "fill-in-the-blank", question: "In Pomerol, the grape variety Cabernet Franc is also known by what synonym?", answer: "Bouchet" },
+            { type: "multiple-choice", question: "What is the largest Grand Cru in Burgundy by area?", options: ["Clos de Vougeot", "Corton", "Échezeaux", "Chambertin"], answer: "Corton" },
+            { type: "fill-in-the-blank", question: "The mixture of sand, clay, and gravel found in the Graves region of Bordeaux is called __.", answer: "boulbenes" },
+            { type: "multiple-choice", question: "What is the only St. Emilion estate to use a high proportion of Cabernet Sauvignon in its blend?", options: ["Château Ausone", "Château Cheval Blanc", "Château Angélus", "Château Figeac"], answer: "Château Figeac" },
+            { type: "ordering", question: "List the St-Emilion Premiers Grands Crus Classés A of 2012.", items: ["Château Angélus", "Château Ausone", "Château Pavie", "Château Cheval Blanc"], answer: ["Château Angélus", "Château Ausone", "Château Pavie", "Château Cheval Blanc"] },
+            { type: "fill-in-the-blank", question: "The soil in Chablis Grand Cru vineyards is famously composed of __ marl.", answer: "Kimmeridgian" },
+            { type: "matching", question: "Match the Grand Cru of Gevrey-Chambertin to its location.", items: { "Mazis-Chambertin": "North of Clos de Bèze", "Latricières-Chambertin": "South of Chambertin", "Ruchottes-Chambertin": "Steepest and highest", "Clos de Bèze": "Oldest climat" }, pool: ["North of Clos de Bèze", "South of Chambertin", "Steepest and highest", "Oldest climat", "Largest by area"] },
+            { type: "multiple-choice", question: "The largest landowner in Corton and Corton-Charlemagne is Maison __.", options: ["Louis Jadot", "Joseph Drouhin", "Louis Latour", "Bouchard Père et Fils"], answer: "Louis Latour" },
+            { type: "fill-in-the-blank", question: "The traditional 228L barrel used in the Côte d'Or is called a __.", answer: "pièce" },
+        ]
+    },
+    {
+        topic: "The Wines of France II: Loire, Rhône, Alsace & Beyond",
+        questions: [
+            { type: "multiple-choice", question: "What is the primary red grape of Chinon, Bourgueil, and Saumur-Champigny?", options: ["Pinot Noir", "Cabernet Sauvignon", "Cabernet Franc", "Gamay"], answer: "Cabernet Franc" },
+            { type: "fill-in-the-blank", question: "The unofficial grand crus of Savennières are Roche aux Moines and Coulée de Serrant, the latter being a monopole of __.", answer: "Nicolas Joly" },
+            { type: "matching", question: "Match the soil type to the Sancerre region where it's found.", items: { "silex": "Flint-heavy", "terres blanches": "Kimmeridgian clay", "caillotes": "Stony, fossil-rich" }, pool: ["Flint-heavy", "Kimmeridgian clay", "Stony, fossil-rich", "Volcanic"] },
+            { type: "multiple-choice", question: "The white grape Viognier can be co-fermented up to 20% in which Northern Rhône AOP?", options: ["Hermitage", "Côte-Rôtie", "Cornas", "St-Joseph"], answer: "Côte-Rôtie" },
+            { type: "fill-in-the-blank", question: "The quartzite pebbles famous in Châteauneuf-du-Pape vineyards are called __.", answer: "galets" },
+            { type: "multiple-choice", question: "Which AOP has the highest minimum alcohol requirement in France?", options: ["Gigondas", "Bandol", "Châteauneuf-du-Pape", "Cornas"], answer: "Châteauneuf-du-Pape" },
+            { type: "multiple-choice", question: "Red wines from Bandol AOP must contain a minimum of 50% of which grape variety?", options: ["Grenache", "Syrah", "Mourvèdre", "Cinsault"], answer: "Mourvèdre" },
+            { type: "fill-in-the-blank", question: "A wine from Alsace labeled 'Gentil' must contain at least 50% __ varieties.", answer: "noble" },
+            { type: "ordering", question: "Order the following Beaujolais Crus from generally lightest to fullest-bodied.", items: ["Morgon", "Chiroubles", "Fleurie", "Moulin-à-Vent"], answer: ["Chiroubles", "Fleurie", "Morgon", "Moulin-à-Vent"] },
+            { type: "multiple-choice", question: "Wines from Cahors AOP must contain at least 70% of which grape?", options: ["Tannat", "Fer", "Négrette", "Malbec"], answer: "Malbec" },
+            { type: "fill-in-the-blank", question: "The sweet wine Jurançon is made from grapes dried on the vine, a process known as __.", answer: "passerillage" },
+            { type: "matching", question: "Match the Jura wine style to its description.", items: { "Vin Jaune": "Oxidative wine from Savagnin", "Vin de Paille": "Straw wine from dried grapes", "Macvin du Jura": "Fortified mistelle", "Crémant du Jura": "Traditional method sparkling" }, pool: ["Oxidative wine from Savagnin", "Straw wine from dried grapes", "Fortified mistelle", "Traditional method sparkling", "Red wine blend"] }
+        ]
+    },
+    {
+        topic: "The Wines of Spain",
+        questions: [
+            { type: "ordering", question: "Place the Spanish aging terms in order from least to most aging required.", items: ["Reserva", "Crianza", "Gran Reserva", "Joven"], answer: ["Joven", "Crianza", "Reserva", "Gran Reserva"] },
+            { type: "multiple-choice", question: "What was the first region in Spain to be elevated to DOCa status?", options: ["Priorat", "Ribera del Duero", "Rioja", "Jerez"], answer: "Rioja" },
+            { type: "fill-in-the-blank", question: "The governing body for a Spanish wine region is called the Consejo __.", answer: "Regulador" },
+            { type: "multiple-choice", question: "Which white grape variety is most closely associated with Sherry production?", options: ["Verdejo", "Albariño", "Palomino", "Airén"], answer: "Palomino" },
+            { type: "matching", question: "Match the Spanish grape to its most famous region.", items: { "Tempranillo": "Rioja", "Albariño": "Rías Baixas", "Verdejo": "Rueda", "Monastrell": "Jumilla" }, pool: ["Rioja", "Rías Baixas", "Rueda", "Jumilla", "Bierzo"] },
+            { type: "fill-in-the-blank", question: "The slate and quartz soil of Priorat is known locally as __.", answer: "licorella" },
+            { type: "multiple-choice", question: "What is the primary red grape variety of the Bierzo DO?", options: ["Tempranillo", "Garnacha", "Mencía", "Bobal"], answer: "Mencía" },
+            { type: "fill-in-the-blank", question: "Spain's most planted grape variety, and the world's, is the white grape __.", answer: "Airén" },
+            { type: "multiple-choice", question: "Vega Sicilia, Spain's most famous estate, is located in which DO?", options: ["Rioja", "Priorat", "Toro", "Ribera del Duero"], answer: "Ribera del Duero" },
+            { type: "matching", question: "Match the Sherry style to its aging environment.", items: { "Fino": "Biological (under flor)", "Oloroso": "Oxidative (no flor)", "Amontillado": "Biological then Oxidative", "Palo Cortado": "Brief biological then Oxidative" }, pool: ["Biological (under flor)", "Oxidative (no flor)", "Biological then Oxidative", "Brief biological then Oxidative"] },
+            { type: "ordering", question: "Order the sub-regions of Rioja from west to east.", items: ["Rioja Baja", "Rioja Alta", "Rioja Alavesa"], answer: ["Rioja Alta", "Rioja Alavesa", "Rioja Baja"] }
+        ]
+    },
+    {
+        topic: "The Wines of Italy",
+        questions: [
+            { type: "multiple-choice", question: "Which of these wines was among the first three to be awarded DOCG status in 1980?", options: ["Chianti Classico", "Barbaresco", "Amarone della Valpolicella", "Barolo"], answer: "Barolo" },
+            { type: "fill-in-the-blank", question: "The process of refermenting Valpolicella on the pressed skins of Amarone is called __.", answer: "ripasso" },
+            { type: "matching", question: "Match the Piemontese wine to its primary grape.", items: { "Barolo": "Nebbiolo", "Gavi": "Cortese", "Barbera d'Asti": "Barbera", "Dogliani": "Dolcetto" }, pool: ["Nebbiolo", "Cortese", "Barbera", "Dolcetto", "Arneis"] },
+            { type: "multiple-choice", question: "The clone of Sangiovese used for Brunello di Montalcino is known as Sangiovese __.", options: ["Grosso", "Piccolo", "Romagnolo", "Toscano"], answer: "Grosso" },
+            { type: "fill-in-the-blank", question: "Soave Superiore DOCG must be made from a minimum of 70% __.", answer: "Garganega" },
+            { type: "ordering", question: "Arrange the quality levels of Chianti Classico from basic to highest.", items: ["Riserva", "Annata (Normale)", "Gran Selezione"], answer: ["Annata (Normale)", "Riserva", "Gran Selezione"] },
+            { type: "multiple-choice", question: "Which is the sole DOCG of Sardegna (Sardinia)?", options: ["Cannonau di Sardegna", "Vermentino di Gallura", "Vernaccia di Oristano", "Malvasia di Bosa"], answer: "Vermentino di Gallura" },
+            { type: "fill-in-the-blank", question: "The primary red grape of Sicily's Cerasuolo di Vittoria DOCG is Nero d'Avola, blended with __.", answer: "Frappato" },
+            { type: "fill-in-the-blank", question: "Taurasi DOCG, from Campania, is made from 100% __.", answer: "Aglianico" },
+            { type: "matching", question: "Match the region to its famous white grape.", items: { "Campania": "Fiano", "Marche": "Verdicchio", "Friuli": "Friulano", "Alto Adige": "Pinot Bianco" }, pool: ["Fiano", "Verdicchio", "Friulano", "Pinot Bianco", "Garganega"] },
+            { type: "multiple-choice", question: "Which wine is made from the Prugnolo Gentile clone of Sangiovese?", options: ["Brunello di Montalcino", "Vino Nobile di Montepulciano", "Morellino di Scansano", "Chianti Classico"], answer: "Vino Nobile di Montepulciano" }
+        ]
+    },
+    {
+        topic: "The Wines of Germany & Austria",
+        questions: [
+            { type: "ordering", question: "Place the German Prädikat levels in order from least to most ripe.", items: ["Spätlese", "Auslese", "Kabinett", "Beerenauslese", "Trockenbeerenauslese"], answer: ["Kabinett", "Spätlese", "Auslese", "Beerenauslese", "Trockenbeerenauslese"] },
+            { type: "multiple-choice", question: "A VDP wine from a top-tier, classified vineyard site labeled as a dry wine will have what designation on the bottle?", options: ["Erste Lage", "Grosses Gewächs", "Ortswein", "Gutswein"], answer: "Grosses Gewächs" },
+            { type: "matching", question: "Match the famous German vineyard (Einzellage) to its region (Anbaugebiet).", items: { "Doctor": "Mosel", "Scharzhofberger": "Saar (Mosel)", "Schloss Johannisberg": "Rheingau", "Kirchenstück": "Pfalz" }, pool: ["Mosel", "Saar (Mosel)", "Rheingau", "Pfalz", "Rheinhessen"] },
+            { type: "fill-in-the-blank", question: "The Rheingau village of Assmannshausen is famous for producing high-quality red wine from __ (Pinot Noir).", answer: "Spätburgunder" },
+            { type: "multiple-choice", question: "What is Austria's most planted grape variety?", options: ["Riesling", "Zweigelt", "Blaufränkisch", "Grüner Veltliner"], answer: "Grüner Veltliner" },
+            { type: "ordering", question: "Arrange the quality levels of the Wachau (Vinea Wachau) from lightest to richest.", items: ["Smaragd", "Steinfeder", "Federspiel"], answer: ["Steinfeder", "Federspiel", "Smaragd"] },
+            { type: "fill-in-the-blank", question: "Red Devonian slate soil is characteristic of the Mittelmosel, especially in villages like Ürzig and __.", answer: "Erden" },
+            { type: "multiple-choice", question: "Which German region has the largest acreage under vine?", options: ["Mosel", "Pfalz", "Rheingau", "Rheinhessen"], answer: "Rheinhessen" },
+            { type: "fill-in-the-blank", question: "The red grape Lemberger in Germany is known as __ in Austria.", answer: "Blaufränkisch" },
+            { type: "matching", question: "Match the Austrian wine region to its signature grape/style.", items: { "Wachau": "Dry Riesling & Grüner Veltliner", "Burgenland": "Sweet wines & Blaufränkisch", "Steiermark (Styria)": "Sauvignon Blanc", "Thermenregion": "Zierfandler & Rotgipfler" }, pool: ["Dry Riesling & Grüner Veltliner", "Sweet wines & Blaufränkisch", "Sauvignon Blanc", "Zierfandler & Rotgipfler", "Zweigelt"] }
+        ]
+    },
+    {
+        topic: "Sparkling Wines of the World",
+        questions: [
+            { type: "ordering", question: "Arrange the Champagne bottle sizes from smallest to largest.", items: ["Jeroboam", "Magnum", "Standard", "Rehoboam"], answer: ["Standard", "Magnum", "Jeroboam", "Rehoboam"] },
+            { type: "matching", question: "Match the Champagne sweetness level (dosage) to its g/L of sugar.", items: { "Brut Nature": "0-3 g/L", "Extra Brut": "0-6 g/L", "Brut": "0-12 g/L", "Demi-Sec": "32-50 g/L" }, pool: ["0-3 g/L", "0-6 g/L", "0-12 g/L", "12-17 g/L", "17-32 g/L", "32-50 g/L"] },
+            { type: "multiple-choice", question: "What is the minimum time a non-vintage Champagne must be aged on its lees?", options: ["9 months", "12 months", "15 months", "18 months"], answer: "12 months" },
+            { type: "fill-in-the-blank", question: "A grower who makes and sells their own Champagne is known as a Récoltant-Manipulant, indicated by the letters __ on the label.", answer: "RM" },
+            { type: "multiple-choice", question: "What are the three main grape varieties of Champagne?", options: ["Chardonnay, Pinot Noir, Aligoté", "Pinot Noir, Pinot Meunier, Pinot Blanc", "Chardonnay, Pinot Noir, Pinot Meunier", "Chardonnay, Sauvignon Blanc, Sémillon"], answer: "Chardonnay, Pinot Noir, Pinot Meunier" },
+            { type: "fill-in-the-blank", question: "The highest quality Prosecco Superiore comes from the DOCG of Conegliano __.", answer: "Valdobbiadene" },
+            { type: "multiple-choice", question: "Cava, Spain's traditional method sparkling wine, is primarily produced in what region?", options: ["Rioja", "Rías Baixas", "Penedès", "Jerez"], answer: "Penedès" },
+            { type: "matching", question: "Match the sparkling wine to its country of origin.", items: { "Franciacorta": "Italy", "Sekt": "Germany/Austria", "Crémant": "France", "Cap Classique": "South Africa" }, pool: ["Italy", "Germany/Austria", "France", "Spain", "South Africa"] },
+            { type: "fill-in-the-blank", question: "Franciacorta DOCG wines are made from Chardonnay, Pinot Nero, and up to 50% __.", answer: "Pinot Bianco" },
+            { type: "multiple-choice", question: "What does the term 'bottle fermented' on an Australian sparkling wine label signify?", options: ["The wine is from a specific bottle shape", "A minimum of 6 months lees aging", "The wine was fermented in a tank, then bottled", "It is a non-vintage wine"], answer: "A minimum of 6 months lees aging" },
+            { type: "multiple-choice", question: "What does the term 'Paraje Calificado' signify for a Cava?", options: ["A rosé Cava", "A sweet Cava", "A single-vineyard Cava with extra aging", "A Cava aged for less than 9 months"], answer: "A single-vineyard Cava with extra aging" }
+        ]
+    },
+    {
+        topic: "New World I: The Americas",
+        questions: [
+            { type: "multiple-choice", question: "What was the first AVA established in the United States?", options: ["Napa Valley, CA", "Augusta, MO", "Willamette Valley, OR", "Finger Lakes, NY"], answer: "Augusta, MO" },
+            { type: "fill-in-the-blank", question: "A wine labeled with an American AVA must contain at least __% of grapes from that AVA.", answer: "85" },
+            { type: "matching", question: "Match the California AVA to its county.", items: { "Rutherford": "Napa", "Russian River Valley": "Sonoma", "Sta. Rita Hills": "Santa Barbara", "Lodi": "San Joaquin" }, pool: ["Napa", "Sonoma", "Santa Barbara", "San Joaquin", "Mendocino"] },
+            { type: "ordering", question: "Arrange these Napa Valley AVAs from south to north.", items: ["St. Helena", "Oakville", "Calistoga", "Carneros"], answer: ["Carneros", "Oakville", "St. Helena", "Calistoga"] },
+            { type: "multiple-choice", question: "Oregon is most famous for which grape variety?", options: ["Cabernet Sauvignon", "Zinfandel", "Pinot Noir", "Syrah"], answer: "Pinot Noir" },
+            { type: "fill-in-the-blank", question: "Washington State's vineyards are located east of the __ Mountains, in the rain shadow.", answer: "Cascade" },
+            { type: "multiple-choice", question: "What is the most planted grape variety in Chile?", options: ["Carmenère", "Merlot", "Cabernet Sauvignon", "País"], answer: "Cabernet Sauvignon" },
+            { type: "fill-in-the-blank", question: "The cool ocean current that has a major influence on Chile's coastal wine regions is the __ Current.", answer: "Humboldt" },
+            { type: "matching", question: "Match the Chilean wine region to its specialty.", items: { "Casablanca Valley": "Cool-climate Sauvignon Blanc & Chardonnay", "Maipo Valley": "Classic Cabernet Sauvignon", "Colchagua Valley": "Rich Carmenère & Syrah", "Limarí Valley": "Mineral-driven Chardonnay on limestone" }, pool: ["Cool-climate Sauvignon Blanc & Chardonnay", "Classic Cabernet Sauvignon", "Rich Carmenère & Syrah", "Mineral-driven Chardonnay on limestone", "Old Vine País"] },
+            { type: "multiple-choice", question: "Argentina's signature red grape is Malbec, but its signature aromatic white grape is __.", options: ["Sauvignon Blanc", "Chardonnay", "Viognier", "Torrontés"], answer: "Torrontés" },
+            { type: "fill-in-the-blank", question: "The high-altitude wine region of Salta in Argentina is home to some of the world's highest vineyards, including Colomé's Altura Máxima at over 3,000 meters.", answer: "Salta" },
+            { type: "multiple-choice", question: "Uruguay's signature red grape is __.", options: ["Malbec", "Cabernet Franc", "Tannat", "Bonarda"], answer: "Tannat" },
+        ]
+    },
+    {
+        topic: "New World II: AUS & NZ",
+        questions: [
+            { type: "multiple-choice", question: "Which Australian state produces the most wine by volume?", options: ["Victoria", "New South Wales", "South Australia", "Western Australia"], answer: "South Australia" },
+            { type: "fill-in-the-blank", question: "The famous 'terra rossa' soil, a red clay over limestone, is characteristic of which Australian region?", answer: "Coonawarra" },
+            { type: "matching", question: "Match the Australian region to its iconic wine style.", items: { "Barossa Valley": "Shiraz", "Clare Valley": "Riesling", "Hunter Valley": "Sémillon", "Margaret River": "Cabernet Sauvignon" }, pool: ["Shiraz", "Riesling", "Sémillon", "Cabernet Sauvignon", "Pinot Noir"] },
+            { type: "multiple-choice", question: "What is the name of Penfolds' most iconic and collectible wine?", options: ["St. Henri", "Bin 707", "Grange", "Yattarna"], answer: "Grange" },
+            { type: "fill-in-the-blank", question: "The Australian term for sweet, fortified wines, especially those from Rutherglen, is '__.'", answer: "stickie" },
+            { type: "ordering", question: "Order these South Australian zones from north to south.", items: ["Fleurieu", "Limestone Coast", "Barossa", "Mount Lofty Ranges"], answer: ["Barossa", "Mount Lofty Ranges", "Fleurieu", "Limestone Coast"] },
+            { type: "multiple-choice", question: "The wine region of Marlborough in New Zealand is world-famous for which grape variety?", options: ["Pinot Noir", "Chardonnay", "Sauvignon Blanc", "Riesling"], answer: "Sauvignon Blanc" },
+            { type: "fill-in-the-blank", question: "New Zealand's southernmost and highest-altitude wine region, known for high-quality Pinot Noir, is __.", answer: "Central Otago" },
+            { type: "multiple-choice", question: "Which region on New Zealand's North Island is renowned for its red blends, often compared to Bordeaux?", options: ["Gisborne", "Martinborough", "Hawke's Bay", "Auckland"], answer: "Hawke's Bay" },
+            { type: "fill-in-the-blank", question: "The Gimblett __ is a respected sub-region of Hawke's Bay known for its warm, gravelly soils.", answer: "Gravels" },
+        ]
+    },
+    {
+        topic: "New World III: South Africa & Beyond",
+        questions: [
+            { type: "multiple-choice", question: "South Africa's signature red grape, a cross between Pinot Noir and Cinsault, is called what?", options: ["Pinotage", "Shiraz", "Cabernet Sauvignon", "Merlot"], answer: "Pinotage" },
+            { type: "fill-in-the-blank", question: "South Africa's wine laws are governed by the Wine of Origin (WO) system, introduced in __.", answer: "1973" },
+            { type: "multiple-choice", question: "The most historically significant wine district in South Africa, home to the country's first vineyards, is __.", options: ["Stellenbosch", "Paarl", "Constantia", "Swartland"], answer: "Constantia" },
+            { type: "matching", question: "Match the South African district to its geographical region.", items: { "Stellenbosch": "Coastal Region", "Walker Bay": "Cape South Coast", "Robertson": "Breede River Valley", "Calitzdorp": "Klein Karoo" }, pool: ["Coastal Region", "Cape South Coast", "Breede River Valley", "Klein Karoo", "Olifants River"] },
+            { type: "fill-in-the-blank", question: "The cool-climate district of Walker Bay, particularly the Hemel-en-Aarde valley, is renowned for its high-quality Chardonnay and __.", answer: "Pinot Noir" },
+            { type: "multiple-choice", question: "The term for traditional method sparkling wine in South Africa is __.", options: ["Sekt", "Crémant", "Cap Classique", "Vonkelwyn"], answer: "Cap Classique" },
+            { type: "fill-in-the-blank", question: "The most widely planted grape in South Africa is Chenin Blanc, known locally as __.", answer: "Steen" },
+            { type: "multiple-choice", question: "The most famous wine region of Greece's Peloponnese, known for red wines from the Agiorgitiko grape, is __.", options: ["Nemea", "Mantinia", "Patras", "Monemvasia"], answer: "Nemea" },
+            { type: "fill-in-the-blank", question: "The Greek island of Santorini is famous for white wines from the __ grape, often trained in a basket shape called a stefani.", answer: "Assyrtiko" },
+            { type:
+: "ordering", question: "Order the quality levels of Hungarian Tokaji Aszú from least to most sweet (pre-2013 law).", items: ["5 Puttonyos", "3 Puttonyos", "6 Puttonyos", "4 Puttonyos", "Aszúesszencia"], answer: ["3 Puttonyos", "4 Puttonyos", "5 Puttonyos", "6 Puttonyos", "Aszúesszencia"] }
+        ]
+    },
+    {
+        topic: "Viticulture, Vinification & The Rest",
+        questions: [
+            { type: "multiple-choice", question: "The process of grape skins changing color is known as what?", options: ["Budbreak", "Véraison", "Flowering", "Shatter"], answer: "Véraison" },
+            { type: "fill-in-the-blank", question: "The French term for 'old vines' is __.", answer: "vieilles vignes" },
+            { type: "matching", question: "Match the winemaking term to its definition.", items: { "Débourbage": "Settling of juice before fermentation", "Pigeage": "Punching down the cap", "Remontage": "Pumping over the cap", "Élevage": "The 'raising' or maturation of wine" }, pool: ["Settling of juice before fermentation", "Punching down the cap", "Pumping over the cap", "The 'raising' or maturation of wine", "Racking the wine"] },
+            { type: "multiple-choice", question: "The addition of sugar to grape must to increase final alcohol content is called __.", options: ["Acidification", "Chaptalization", "Maceration", "Süssreserve"], answer: "Chaptalization" },
+            { type: "fill-in-the-blank", question: "The pest that devastated European vineyards in the late 19th century by attacking vine roots was __.", answer: "phylloxera" },
+            { type: "multiple-choice", question: "Which of the following is NOT one of the 'noble' grapes of Alsace?", options: ["Riesling", "Pinot Gris", "Gewurztraminer", "Pinot Blanc"], answer: "Pinot Blanc" },
+            { type: "fill-in-the-blank", question: "The Japanese rice wine, sake, is made through a process of __ parallel fermentation.", answer: "multiple" },
+            { type: "fill-in-the-blank", question: "The French organization created in 1935 to enforce AOC laws is the INAO, which stands for Institut National des __ d'Origine.", answer: "Appellations" },
+            { type: "ordering", question: "Place the steps of traditional method sparkling winemaking in the correct order.", items: ["Tirage (bottling for 2nd ferment)", "Primary Fermentation", "Disgorgement", "Remuage (riddling)"], answer: ["Primary Fermentation", "Tirage (bottling for 2nd ferment)", "Remuage (riddling)", "Disgorgement"] },
+            { type: "multiple-choice", question: "Which American oak species is most commonly used for wine barrels?", options: ["Quercus robur", "Quercus petraea", "Quercus suber", "Quercus alba"], answer: "Quercus alba" },
+        ]
+    }
+];
+
+    // Game state
+    let currentTopicIndex = -1;
+    let currentQuestionIndex = 0;
+    let score = 0;
+    let levelScores = {};
+    let questionsInLevel = [];
+
+    // DOM Elements
+    const topicSelectionScreen = document.getElementById('topic-selection-screen');
+    const gameScreen = document.getElementById('game-screen');
+    const topicList = document.getElementById('topic-list');
+    const topicTitle = document.getElementById('topic-title');
+    const questionText = document.getElementById('question-text');
+    const answerArea = document.getElementById('answer-area');
+    const feedback = document.getElementById('feedback');
+    const submitBtn = document.getElementById('submit-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const scoreDisplay = document.getElementById('score');
+    const progressBar = document.getElementById('progress-bar');
+    const backToTopicsBtn = document.getElementById('back-to-topics');
+    const levelCompleteModal = document.getElementById('level-complete-modal');
+    const levelSummary = document.getElementById('level-summary');
+    const nextLevelBtn = document.getElementById('next-level-btn');
+    const mainMenuBtn = document.getElementById('main-menu-btn');
+
+    function init() {
+        topicList.innerHTML = '';
+        gameData.forEach((topic, index) => {
+            const topicButton = document.createElement('button');
+            topicButton.className = 'btn-primary p-4 rounded-lg text-left';
+            topicButton.innerHTML = `
+                <div class="font-bold text-lg">${index + 1}. ${topic.topic}</div>
+                <div class="text-sm text-gray-200 mt-1">${topic.questions.length} Questions</div>
+            `;
+            topicButton.onclick = () => startTopic(index);
+            topicList.appendChild(topicButton);
+        });
+        showScreen('topics');
+    }
+
+    function showScreen(screen) {
+        topicSelectionScreen.classList.toggle('hidden', screen !== 'topics');
+        gameScreen.classList.toggle('hidden', screen !== 'game');
+    }
+
+    function startTopic(index) {
+        currentTopicIndex = index;
+        currentQuestionIndex = 0;
+        score = 0;
+        
+        // Deep copy and shuffle questions
+        questionsInLevel = JSON.parse(JSON.stringify(gameData[index].questions));
+        shuffleArray(questionsInLevel);
+
+        levelScores[index] = { score: 0, total: questionsInLevel.length };
+        topicTitle.textContent = gameData[index].topic;
+        updateScore();
+        showScreen('game');
+        displayQuestion();
+    }
+
+    function displayQuestion() {
+        if (currentQuestionIndex >= questionsInLevel.length) {
+            showLevelComplete();
+            return;
+        }
+
+        const question = questionsInLevel[currentQuestionIndex];
+        questionText.textContent = question.question;
+        answerArea.innerHTML = '';
+        feedback.textContent = '';
+        feedback.className = 'mt-6 text-center font-bold text-lg h-8';
+
+        switch (question.type) {
+            case 'multiple-choice':
+                renderMultipleChoice(question);
+                break;
+            case 'fill-in-the-blank':
+                renderFillInTheBlank(question);
+                break;
+            case 'matching':
+                renderMatching(question);
+                break;
+            case 'ordering':
+                renderOrdering(question);
+                break;
+        }
+
+        submitBtn.classList.remove('hidden');
+        nextBtn.classList.add('hidden');
+        updateProgressBar();
+    }
+    
+    function renderMultipleChoice(question) {
+        const options = [...question.options];
+        shuffleArray(options);
+        const optionsHtml = options.map(option => `
+            <div class="answer-option p-4 rounded-md cursor-pointer mb-3" onclick="selectOption(this)">
+                ${option}
+            </div>
+        `).join('');
+        answerArea.innerHTML = `<div id="mc-options">${optionsHtml}</div>`;
+    }
+
+    function selectOption(element) {
+        const options = document.querySelectorAll('.answer-option');
+        options.forEach(opt => opt.classList.remove('selected'));
+        element.classList.add('selected');
+    }
+
+    function renderFillInTheBlank(question) {
+        answerArea.innerHTML = `
+            <input type="text" id="blank-input" class="w-full p-3 bg-gray-700 border-2 border-gray-500 rounded-md focus:outline-none focus:border-yellow-600 text-lg" placeholder="Type your answer...">
+        `;
+    }
+    
+    function renderMatching(question) {
+        const items = Object.keys(question.items);
+        const options = [...question.pool];
+        shuffleArray(items);
+        shuffleArray(options);
+
+        let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
+        
+        // Column for items to match
+        html += '<div><h3 class="font-semibold mb-2 text-center text-gray-400">Items</h3><div class="space-y-3">';
+        items.forEach((item, index) => {
+            html += `<div class="flex items-center justify-between bg-gray-800 p-3 rounded-md">
+                        <span class="flex-1">${item}</span>
+                        <select id="match-select-${index}" data-item="${item}" class="ml-4 bg-gray-700 border border-gray-500 rounded-md p-2 w-1/2">
+                            <option value="">Select Match</option>
+                            ${options.map(opt => `<option value="${opt}">${opt}</option>`).join('')}
+                        </select>
+                     </div>`;
+        });
+        html += '</div></div>';
+
+        // Placeholder column for a better layout, though not interactive
+        html += '<div><h3 class="font-semibold mb-2 text-center text-gray-400">Options Pool</h3><div class="space-y-3">';
+        options.forEach(opt => {
+             html += `<div class="bg-gray-700 p-3 rounded-md text-center">${opt}</div>`;
+        });
+        html += '</div></div>';
+
+        html += '</div>';
+        answerArea.innerHTML = html;
+    }
+
+
+    function renderOrdering(question) {
+        const items = [...question.items];
+        shuffleArray(items);
+        
+        answerArea.innerHTML = `
+            <p class="text-sm text-center text-gray-400 mb-4">Drag and drop the items into the correct order.</p>
+            <div id="ordering-list" class="drop-zone p-4 rounded-lg space-y-2">
+                ${items.map(item => `
+                    <div class="draggable bg-gray-800 p-3 rounded-md text-center" draggable="true">${item}</div>
+                `).join('')}
+            </div>
+        `;
+        setupDragAndDrop();
+    }
+    
+    function setupDragAndDrop() {
+        const draggables = document.querySelectorAll('.draggable');
+        const container = document.getElementById('ordering-list');
+
+        draggables.forEach(draggable => {
+            draggable.addEventListener('dragstart', () => {
+                draggable.classList.add('dragging');
+            });
+
+            draggable.addEventListener('dragend', () => {
+                draggable.classList.remove('dragging');
+            });
+        });
+
+        container.addEventListener('dragover', e => {
+            e.preventDefault();
+            const afterElement = getDragAfterElement(container, e.clientY);
+            const dragging = document.querySelector('.dragging');
+            if (afterElement == null) {
+                container.appendChild(dragging);
+            } else {
+                container.insertBefore(dragging, afterElement);
+            }
+        });
+    }
+
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
+
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+
+    function handleSubmit() {
+        const question = questionsInLevel[currentQuestionIndex];
+        let userAnswer;
+        let isCorrect = false;
+
+        switch (question.type) {
+            case 'multiple-choice':
+                const selected = document.querySelector('.answer-option.selected');
+                if (selected) {
+                    userAnswer = selected.textContent.trim();
+                    isCorrect = userAnswer === question.answer;
+                    showFeedback(selected, isCorrect, question.answer, '.answer-option');
+                }
+                break;
+            case 'fill-in-the-blank':
+                const input = document.getElementById('blank-input');
+                userAnswer = input.value.trim();
+                isCorrect = userAnswer.toLowerCase() === question.answer.toLowerCase();
+                if (!isCorrect) {
+                   input.value = `Your answer: ${userAnswer}. Correct: ${question.answer}`;
+                }
+                showFeedback(input, isCorrect);
+                break;
+            case 'matching':
+                const selects = answerArea.querySelectorAll('select');
+                let correctMatches = 0;
+                selects.forEach(select => {
+                    const item = select.dataset.item;
+                    const selectedValue = select.value;
+                    const isMatchCorrect = question.items[item] === selectedValue;
+                    select.classList.add(isMatchCorrect ? 'correct' : 'incorrect');
+                    if (isMatchCorrect) correctMatches++;
+                });
+                isCorrect = correctMatches === Object.keys(question.items).length;
+                feedback.textContent = isCorrect ? 'Perfect Match!' : `You got ${correctMatches} out of ${Object.keys(question.items).length} correct.`;
+                feedback.classList.add(isCorrect ? 'text-green-400' : 'text-red-400');
+                break;
+            case 'ordering':
+                const orderedItems = [...document.querySelectorAll('#ordering-list .draggable')].map(el => el.textContent.trim());
+                isCorrect = JSON.stringify(orderedItems) === JSON.stringify(question.answer);
+                document.querySelectorAll('#ordering-list .draggable').forEach((el, i) => {
+                    el.classList.add(orderedItems[i] === question.answer[i] ? 'correct' : 'incorrect');
+                });
+                feedback.textContent = isCorrect ? 'Correct Order!' : 'Incorrect Order.';
+                feedback.classList.add(isCorrect ? 'text-green-400' : 'text-red-400');
+                break;
+        }
+
+        if (isCorrect) {
+            score++;
+            updateScore();
+        }
+
+        submitBtn.classList.add('hidden');
+        nextBtn.classList.remove('hidden');
+    }
+    
+    function showFeedback(element, isCorrect, correctAnswer, allSelector) {
+        if (question.type === 'multiple-choice') {
+            const allOptions = document.querySelectorAll(allSelector);
+            allOptions.forEach(opt => {
+                if(opt.textContent.trim() === correctAnswer) {
+                    opt.classList.add('correct');
+                }
+            });
+            if (!isCorrect && element) {
+                element.classList.add('incorrect');
+            }
+        } else { // fill-in-the-blank
+            element.classList.add(isCorrect ? 'correct' : 'incorrect');
+        }
+        
+        feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
+        feedback.classList.add(isCorrect ? 'text-green-400' : 'text-red-400');
+    }
+    
+    function showLevelComplete() {
+        levelScores[currentTopicIndex].score = score;
+        const total = questionsInLevel.length;
+        levelSummary.textContent = `You scored ${score} out of ${total} on "${gameData[currentTopicIndex].topic}".`;
+        
+        // Logic to enable/disable next level button
+        const isLastLevel = currentTopicIndex >= gameData.length - 1;
+        nextLevelBtn.classList.toggle('hidden', isLastLevel);
+        if(!isLastLevel) {
+           nextLevelBtn.textContent = `Continue to Level ${currentTopicIndex + 2}`;
+        }
+        
+        levelCompleteModal.classList.remove('hidden');
+    }
+
+    function handleNextLevel() {
+        levelCompleteModal.classList.add('hidden');
+        startTopic(currentTopicIndex + 1);
+    }
+    
+    function handleMainMenu() {
+        levelCompleteModal.classList.add('hidden');
+        init();
+    }
+
+
+    function updateScore() {
+        scoreDisplay.textContent = score;
+    }
+
+    function updateProgressBar() {
+        const progress = (currentQuestionIndex / questionsInLevel.length) * 100;
+        progressBar.style.width = `${progress}%`;
+    }
+
+    function shuffleArray(array) {
+        for (let i = array.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [array[i], array[j]] = [array[j], array[i]];
+        }
+    }
+
+    // Event Listeners
+    submitBtn.addEventListener('click', handleSubmit);
+    nextBtn.addEventListener('click', () => {
+        currentQuestionIndex++;
+        displayQuestion();
+    });
+    backToTopicsBtn.addEventListener('click', init);
+    nextLevelBtn.addEventListener('click', handleNextLevel);
+    mainMenuBtn.addEventListener('click', handleMainMenu);
+    
+    // Start the game
+    init();
+</script>
+
+</body>
+</html>
