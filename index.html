@@ -65,6 +65,10 @@
             border-color: #c53030 !important;
             color: white;
         }
+        .disabled {
+            pointer-events: none;
+            opacity: 0.7;
+        }
 
         /* Drag and Drop Styles */
         .draggable-list, .drop-zone {
@@ -81,10 +85,7 @@
         }
         .dragging {
             opacity: 0.5;
-        }
-        .drop-zone.drag-over {
-            border-color: #8B7355;
-            background-color: #3a3a3a;
+            background-color: #5a5a5a;
         }
     </style>
 </head>
@@ -188,7 +189,7 @@
             { type: "fill-in-the-blank", question: "The term Fine Champagne on a Cognac label indicates a blend from Grande and Petite Champagne, with at least 50% from __.", answer: "Grande Champagne" },
             { type: "multiple-choice", question: "Most Cognac is produced from which grape variety?", options: ["Folle Blanche", "Colombard", "Ugni Blanc", "Sémillon"], answer: "Ugni Blanc" },
             { type: "fill-in-the-blank", question: "A Charentais still, used for Cognac production, is another name for a traditional alembic __ still.", answer: "pot" },
-            { type: "matching", question: "Match the Cognac age designation to its minimum aging requirement.", items: { "VS (Very Special)": "2 years", "VSOP (Very Superior Old Pale)": "4 years", "Napoléon": "6 years", "XO (Extra Old)": "10 years" }, pool: ["2 years", "4 years", "6 years", "10 years"] },
+            { type: "matching", question: "Match the Cognac age designation to its minimum aging requirement.", items: { "VS": "2 years", "VSOP": "4 years", "Napoléon": "6 years", "XO": "10 years" }, pool: ["2 years", "4 years", "6 years", "10 years"] },
             { type: "fill-in-the-blank", question: "The only rum with AOC status is produced on the island of __.", answer: "Martinique" },
             { type: "multiple-choice", question: "Demerara rum is produced in which South American country?", options: ["Brazil", "Guyana", "Venezuela", "Colombia"], answer: "Guyana" },
             { type: "fill-in-the-blank", question: "The world's oldest documented rum brand, established in 1703, is __ from Barbados.", answer: "Mount Gay" },
@@ -527,7 +528,9 @@
 
     function renderFillInTheBlank(question) {
         answerArea.innerHTML = `
-            <input type="text" id="blank-input" class="w-full p-3 bg-gray-700 border-2 border-gray-500 rounded-md focus:outline-none focus:border-yellow-600 text-lg" placeholder="Type your answer...">
+            <div id="fill-in-wrapper">
+                 <input type="text" id="blank-input" class="w-full p-3 bg-gray-700 border-2 border-gray-500 rounded-md focus:outline-none focus:border-yellow-600 text-lg" placeholder="Type your answer...">
+            </div>
         `;
     }
     
@@ -539,7 +542,6 @@
 
         let html = '<div class="grid grid-cols-1 md:grid-cols-2 gap-6">';
         
-        // Column for items to match
         html += '<div><h3 class="font-semibold mb-2 text-center text-gray-400">Items</h3><div class="space-y-3">';
         items.forEach((item, index) => {
             html += `<div class="flex items-center justify-between bg-gray-800 p-3 rounded-md">
@@ -552,7 +554,6 @@
         });
         html += '</div></div>';
 
-        // Placeholder column for a better layout, though not interactive
         html += '<div><h3 class="font-semibold mb-2 text-center text-gray-400">Options Pool</h3><div class="space-y-3">';
         options.forEach(opt => {
              html += `<div class="bg-gray-700 p-3 rounded-md text-center">${opt}</div>`;
@@ -562,7 +563,6 @@
         html += '</div>';
         answerArea.innerHTML = html;
     }
-
 
     function renderOrdering(question) {
         const items = [...question.items];
@@ -580,30 +580,67 @@
     }
     
     function setupDragAndDrop() {
-        const draggables = document.querySelectorAll('.draggable');
         const container = document.getElementById('ordering-list');
+        if (!container) return;
 
-        draggables.forEach(draggable => {
-            draggable.addEventListener('dragstart', () => {
-                draggable.classList.add('dragging');
-            });
+        let draggedItem = null;
 
-            draggable.addEventListener('dragend', () => {
-                draggable.classList.remove('dragging');
-            });
+        // Mouse Events
+        container.addEventListener('dragstart', e => {
+            if (e.target.classList.contains('draggable')) {
+                draggedItem = e.target;
+                setTimeout(() => e.target.classList.add('dragging'), 0);
+            }
+        });
+
+        container.addEventListener('dragend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
+            }
         });
 
         container.addEventListener('dragover', e => {
             e.preventDefault();
             const afterElement = getDragAfterElement(container, e.clientY);
-            const dragging = document.querySelector('.dragging');
-            if (afterElement == null) {
-                container.appendChild(dragging);
-            } else {
-                container.insertBefore(dragging, afterElement);
+            if (draggedItem) {
+                if (afterElement == null) {
+                    container.appendChild(draggedItem);
+                } else {
+                    container.insertBefore(draggedItem, afterElement);
+                }
+            }
+        });
+
+        // Touch Events
+        container.addEventListener('touchstart', e => {
+            if (e.target.classList.contains('draggable')) {
+                draggedItem = e.target;
+                draggedItem.classList.add('dragging');
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchmove', e => {
+            if (draggedItem) {
+                e.preventDefault();
+                const touch = e.touches[0];
+                const afterElement = getDragAfterElement(container, touch.clientY);
+                if (afterElement == null) {
+                    container.appendChild(draggedItem);
+                } else {
+                    container.insertBefore(draggedItem, afterElement);
+                }
+            }
+        }, { passive: false });
+
+        container.addEventListener('touchend', () => {
+            if (draggedItem) {
+                draggedItem.classList.remove('dragging');
+                draggedItem = null;
             }
         });
     }
+
 
     function getDragAfterElement(container, y) {
         const draggableElements = [...container.querySelectorAll('.draggable:not(.dragging)')];
@@ -622,27 +659,50 @@
 
     function handleSubmit() {
         const question = questionsInLevel[currentQuestionIndex];
-        let userAnswer;
         let isCorrect = false;
 
         switch (question.type) {
             case 'multiple-choice':
                 const selected = document.querySelector('.answer-option.selected');
-                if (selected) {
-                    userAnswer = selected.textContent.trim();
-                    isCorrect = userAnswer === question.answer;
-                    showFeedback(question, selected, isCorrect, question.answer, '.answer-option');
+                const allOptions = document.querySelectorAll('.answer-option');
+                isCorrect = selected && selected.textContent.trim() === question.answer;
+
+                allOptions.forEach(opt => {
+                    if (opt.textContent.trim() === question.answer) {
+                        opt.classList.add('correct');
+                    }
+                    opt.style.pointerEvents = 'none';
+                });
+                
+                if (selected && !isCorrect) {
+                    selected.classList.add('incorrect');
+                } else if (!selected) {
+                    feedback.textContent = `The correct answer was: ${question.answer}`;
+                    feedback.classList.add('text-red-400');
                 }
+                
+                if(selected) showFeedbackText(isCorrect);
                 break;
+
             case 'fill-in-the-blank':
+                const wrapper = document.getElementById('fill-in-wrapper');
                 const input = document.getElementById('blank-input');
-                userAnswer = input.value.trim();
+                const userAnswer = input.value.trim();
                 isCorrect = userAnswer.toLowerCase() === question.answer.toLowerCase();
-                if (!isCorrect) {
-                   input.value = `Your answer: ${userAnswer}. Correct: ${question.answer}`;
+
+                let feedbackHtml;
+                if (isCorrect) {
+                    feedbackHtml = `<div class="p-3 rounded-md text-lg correct">${question.answer}</div>`;
+                } else {
+                    feedbackHtml = `<div class="p-3 rounded-md text-lg incorrect">
+                                        <p class="mb-2"><span class="font-semibold">Your Answer:</span> ${userAnswer || "<em>(blank)</em>"}</p>
+                                        <p><span class="font-semibold">Correct Answer:</span> ${question.answer}</p>
+                                    </div>`;
                 }
-                showFeedback(question, input, isCorrect);
+                wrapper.innerHTML = feedbackHtml;
+                showFeedbackText(isCorrect);
                 break;
+
             case 'matching':
                 const selects = answerArea.querySelectorAll('select');
                 let correctMatches = 0;
@@ -650,21 +710,38 @@
                     const item = select.dataset.item;
                     const selectedValue = select.value;
                     const isMatchCorrect = question.items[item] === selectedValue;
-                    select.classList.add(isMatchCorrect ? 'correct' : 'incorrect');
-                    if (isMatchCorrect) correctMatches++;
+                    if (isMatchCorrect) {
+                        select.classList.add('correct');
+                        correctMatches++;
+                    } else {
+                        select.classList.add('incorrect');
+                        const correctAnswerSpan = document.createElement('span');
+                        correctAnswerSpan.className = 'text-green-400 ml-2 font-bold';
+                        correctAnswerSpan.textContent = ` \u2713 ${question.items[item]}`;
+                        select.parentElement.appendChild(correctAnswerSpan);
+                    }
+                    select.disabled = true;
                 });
                 isCorrect = correctMatches === Object.keys(question.items).length;
                 feedback.textContent = isCorrect ? 'Perfect Match!' : `You got ${correctMatches} out of ${Object.keys(question.items).length} correct.`;
                 feedback.classList.add(isCorrect ? 'text-green-400' : 'text-red-400');
                 break;
+
             case 'ordering':
                 const orderedItems = [...document.querySelectorAll('#ordering-list .draggable')].map(el => el.textContent.trim());
                 isCorrect = JSON.stringify(orderedItems) === JSON.stringify(question.answer);
-                document.querySelectorAll('#ordering-list .draggable').forEach((el, i) => {
-                    el.classList.add(orderedItems[i] === question.answer[i] ? 'correct' : 'incorrect');
-                });
-                feedback.textContent = isCorrect ? 'Correct Order!' : 'Incorrect Order.';
-                feedback.classList.add(isCorrect ? 'text-green-400' : 'text-red-400');
+                const container = document.getElementById('ordering-list');
+                container.classList.add('disabled');
+
+                if (isCorrect) {
+                    container.querySelectorAll('.draggable').forEach(el => el.classList.add('correct'));
+                    feedback.textContent = 'Correct Order!';
+                    feedback.classList.add('text-green-400');
+                } else {
+                    container.innerHTML = question.answer.map(item => `<div class="draggable bg-gray-800 p-3 rounded-md text-center correct">${item}</div>`).join('');
+                    feedback.textContent = 'Incorrect. Here is the correct order.';
+                    feedback.classList.add('text-red-400');
+                }
                 break;
         }
 
@@ -677,21 +754,7 @@
         nextBtn.classList.remove('hidden');
     }
     
-    function showFeedback(question, element, isCorrect, correctAnswer, allSelector) {
-        if(question.type === 'multiple-choice') {
-            const allOptions = document.querySelectorAll(allSelector);
-            allOptions.forEach(opt => {
-                if(opt.textContent.trim() === correctAnswer) {
-                    opt.classList.add('correct');
-                }
-            });
-            if (!isCorrect && element) {
-                element.classList.add('incorrect');
-            }
-        } else { // fill-in-the-blank
-            element.classList.add(isCorrect ? 'correct' : 'incorrect');
-        }
-        
+    function showFeedbackText(isCorrect) {
         feedback.textContent = isCorrect ? 'Correct!' : 'Incorrect!';
         feedback.classList.add(isCorrect ? 'text-green-400' : 'text-red-400');
     }
@@ -701,7 +764,6 @@
         const total = questionsInLevel.length;
         levelSummary.textContent = `You scored ${score} out of ${total} on "${gameData[currentTopicIndex].topic}".`;
         
-        // Logic to enable/disable next level button
         const isLastLevel = currentTopicIndex >= gameData.length - 1;
         nextLevelBtn.classList.toggle('hidden', isLastLevel);
         if(!isLastLevel) {
